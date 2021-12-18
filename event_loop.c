@@ -132,6 +132,7 @@ task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg) {
     task->right = NULL;
 
     event_loop_schedule_task(el, task);
+    return task;
 }
 
 void
