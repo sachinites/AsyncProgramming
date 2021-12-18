@@ -6,6 +6,8 @@
 #include <unistd.h>
 #include "event_loop.h"
 
+bool static el_debug = true;
+
 static task_t *
 event_loop_get_next_task_to_run(event_loop_t *el){
 
@@ -64,9 +66,38 @@ event_loop_init(event_loop_t *el){
 static void *
 event_loop_thread(void *arg) {
 
+    task_t *task;
+    event_loop_t *el = (event_loop_t *)arg;
+
     while(1) {
-        sleep(2);
-        printf("%s() called\n", __FUNCTION__);
+        /* Lock the event Loop Mutex */
+        pthread_mutex_lock(&el->ev_loop_mutex);
+
+        while ( (task = event_loop_get_next_task_to_run(el) ) == NULL) {
+
+        /* Event Loop thread do not have any task to fire
+           , suspended the event loop thread*/
+           if (el_debug) {
+               printf ("Task Array Empty, EL thread is suspending\n");
+           }
+           pthread_cond_wait(&el->ev_loop_cv, &el->ev_loop_mutex);
+           /* We are here when event loop thread recvs signal. On receiving the
+           signal, go back, fetch the new task from task array
+           again and decide if we want to block again or fire the task*/
+        }
+
+        /* We are done with the task array, unlock it now, object of interest
+        is already detached from task array*/
+        pthread_mutex_unlock(&el->ev_loop_mutex);
+
+        if (el_debug) {
+            printf("EL Thread woken up, Firing the task\n");
+        }
+
+        /* Fire the task now */
+        task->cbk(task->arg);
+        /* Free the task, we are done with this task*/
+        free(task);
     }
 }
 
