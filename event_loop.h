@@ -19,6 +19,9 @@
 #ifndef __EV_LOOP__
 #define __EV_LOOP__
 
+typedef struct task_ task_t;
+typedef struct event_loop_ event_loop_t;
+
 typedef void (*event_cbk)(void *);
 
 struct task_ {
@@ -53,5 +56,11 @@ struct event_loop_{
      * NULL if event loop is resting in peace*/
     struct task_ *current_task;
 };
+
+void
+event_loop_init(event_loop_t *el);
+
+void
+event_loop_run(event_loop_t *el);
 
 #endif /* __EV_LOOP__ */
