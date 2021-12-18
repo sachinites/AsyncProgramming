@@ -64,4 +64,7 @@ event_loop_init(event_loop_t *el);
 void
 event_loop_run(event_loop_t *el);
 
+task_t *
+task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg);
+
 #endif /* __EV_LOOP__ */
