@@ -80,12 +80,13 @@ event_loop_thread(void *arg) {
            if (el_debug) {
                printf ("Task Array Empty, EL thread is suspending\n");
            }
+           el->ev_loop_state = EV_LOOP_IDLE;
            pthread_cond_wait(&el->ev_loop_cv, &el->ev_loop_mutex);
            /* We are here when event loop thread recvs signal. On receiving the
            signal, go back, fetch the new task from task array
            again and decide if we want to block again or fire the task*/
         }
-
+        el->ev_loop_state = EV_LOOP_BUSY;
         /* We are done with the task array, unlock it now, object of interest
         is already detached from task array*/
         pthread_mutex_unlock(&el->ev_loop_mutex);
@@ -95,10 +96,42 @@ event_loop_thread(void *arg) {
         }
 
         /* Fire the task now */
+        el->current_task = task;
         task->cbk(task->arg);
+        el->current_task = NULL;
         /* Free the task, we are done with this task*/
         free(task);
     }
+}
+
+
+static void
+event_loop_schedule_task(event_loop_t *el, task_t *task) {
+
+    pthread_mutex_lock(&el->ev_loop_mutex);
+
+    event_loop_add_task_in_task_array(el, task);
+
+    if (el->ev_loop_state == EV_LOOP_BUSY) {
+        pthread_mutex_unlock(&el->ev_loop_mutex);
+        return;
+    }
+
+    pthread_cond_signal(&el->ev_loop_cv);
+    pthread_mutex_unlock(&el->ev_loop_mutex);
+}
+
+
+task_t *
+task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg) {
+
+    task_t *task = (task_t *)calloc(1, sizeof(task_t));
+    task->arg = arg;
+    task->cbk = cbk;
+    task->left = NULL;
+    task->right = NULL;
+
+    event_loop_schedule_task(el, task);
 }
 
 void
