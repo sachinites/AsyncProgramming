@@ -6,6 +6,51 @@
 #include <unistd.h>
 #include "event_loop.h"
 
+static task_t *
+event_loop_get_next_task_to_run(event_loop_t *el){
+
+	task_t *task;
+	if (!el->task_array_head) return NULL;
+    task = el->task_array_head;
+	el->task_array_head = task->right;
+	if (el->task_array_head) {
+		el->task_array_head->left = NULL;
+	}
+	task->left = NULL;
+	task->right = NULL;
+	return task;
+}
+
+static void
+event_loop_add_task_in_task_array(
+			event_loop_t *el,
+			task_t *new_task) {
+
+	task_t *task, *prev_task;
+	
+	prev_task = NULL;
+	
+	task = el->task_array_head;
+	while (task) {
+		prev_task = task;
+		task = task->right;
+	}
+	if (prev_task) {
+		prev_task->right = new_task;
+		new_task->left = prev_task;
+	}
+	else {
+		el->task_array_head = new_task;
+	}
+}
+
+static bool
+task_is_present_in_task_array(task_t *task) {
+
+	return !(task->left == NULL && task->right == NULL);
+}
+
+
 void
 event_loop_init(event_loop_t *el){
 
