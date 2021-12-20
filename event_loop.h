@@ -67,4 +67,7 @@ event_loop_run(event_loop_t *el);
 task_t *
 task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg);
 
+void
+task_cancel_job(event_loop_t *el, task_t *task);
+
 #endif /* __EV_LOOP__ */

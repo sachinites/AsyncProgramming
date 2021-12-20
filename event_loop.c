@@ -52,6 +52,28 @@ task_is_present_in_task_array(task_t *task) {
 	return !(task->left == NULL && task->right == NULL);
 }
 
+static void
+event_loop_remove_task_from_task_array(task_t *task) {
+
+	if(!task->left){
+        if(task->right){
+            task->right->left = NULL;
+            task->right = 0;
+            return;
+        }
+        return;
+    }
+    if(!task->right){
+        task->left->right = NULL;
+        task->left = NULL;
+        return;
+    }
+
+    task->left->right = task->right;
+    task->right->left = task->left;
+    task->left = 0;
+    task->right = 0;
+}
 
 void
 event_loop_init(event_loop_t *el){
@@ -150,4 +172,20 @@ event_loop_run(event_loop_t *el) {
     pthread_create(el->thread, &attr,
                     event_loop_thread, (void *)el);
 
+}
+
+
+void
+task_cancel_job(event_loop_t *el, task_t *task){
+
+  /* Dont kill yourself while you are still executing */
+
+  if (el->current_task == task ) {
+      return;
+  }
+
+    pthread_mutex_lock(&el->ev_loop_mutex);
+    event_loop_remove_task_from_task_array(task);
+    pthread_mutex_unlock(&el->ev_loop_mutex);
+    free(task);
 }
