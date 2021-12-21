@@ -53,7 +53,11 @@ task_is_present_in_task_array(task_t *task) {
 }
 
 static void
-event_loop_remove_task_from_task_array(task_t *task) {
+event_loop_remove_task_from_task_array(event_loop_t *el, task_t *task) {
+
+    if (el->task_array_head == task) {
+        el->task_array_head = task->right;
+    }
 
 	if(!task->left){
         if(task->right){
@@ -185,7 +189,7 @@ task_cancel_job(event_loop_t *el, task_t *task){
   }
 
     pthread_mutex_lock(&el->ev_loop_mutex);
-    event_loop_remove_task_from_task_array(task);
+    event_loop_remove_task_from_task_array(el, task);
     pthread_mutex_unlock(&el->ev_loop_mutex);
     free(task);
 }
