@@ -54,6 +54,7 @@ struct rt_table_ {
 
     char rt_table_name[32];
     struct rt_table_entry_ *head;
+    uint32_t count;
 };
 
 rt_table_t *

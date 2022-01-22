@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 #include "rt.h"
 #include "network_utils.h"
 

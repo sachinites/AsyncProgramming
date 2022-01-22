@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <stdint.h>
 #include "utils.h"
 #include "rt.h"
 
@@ -73,6 +74,7 @@ rt_insert_new_entry(rt_table_t *rt,
     * list*/
    if(!rt->head){
         rt->head = rt_table_entry;
+        rt->count++;
         return 0;
    }
 
@@ -80,6 +82,7 @@ rt_insert_new_entry(rt_table_t *rt,
    rt_table_entry->prev = 0;
    rt->head->prev = rt_table_entry;
    rt->head = rt_table_entry;
+   rt->count++;
    return 0;
 }
 
@@ -99,6 +102,7 @@ rt_delete_rt_entry(rt_table_t *rt,
         if(rt->head)
             rt->head->prev = NULL;
         free(rt_table_entry);
+        rt->count--;
         return 0;
     }
 
@@ -106,13 +110,19 @@ rt_delete_rt_entry(rt_table_t *rt,
         if(rt_table_entry->next){
             rt_table_entry->next->prev = NULL;
             rt_table_entry->next = 0;
+            rt->count--;
+            free(rt_table_entry);
             return 0;
         }
+        rt->count--;
+        free(rt_table_entry);
         return 0;
     }
     if(!rt_table_entry->next){
         rt_table_entry->prev->next = NULL;
         rt_table_entry->prev = NULL;
+        rt->count--;
+        free(rt_table_entry);
         return 0;
     }
 
@@ -120,6 +130,7 @@ rt_delete_rt_entry(rt_table_t *rt,
     rt_table_entry->next->prev = rt_table_entry->prev;
     rt_table_entry->prev = 0;
     rt_table_entry->next = 0;
+    rt->count--;
     free(rt_table_entry);
     return 0;
 }
@@ -157,6 +168,8 @@ rt_display_rt_table(rt_table_t *rt){
     rt_table_entry_t *rt_table_entry = NULL;
     time_t curr_time = time(NULL);
     unsigned int uptime_in_seconds = 0;
+
+    printf ("# count = %u\n", rt->count);
 
     for(rt_table_entry = rt->head; rt_table_entry;
         rt_table_entry = rt_table_entry->next){
