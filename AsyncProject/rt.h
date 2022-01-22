@@ -35,6 +35,10 @@
 typedef struct rt_table_ rt_table_t;
 typedef struct rt_table_entry_ rt_table_entry_t;
 
+#define ROUTE_CREATE    1
+#define ROUTE_UPDATE    2
+#define ROUTE_DELETE    3
+
 struct rt_table_entry_{
 
     char dest[16];
