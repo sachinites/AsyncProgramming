@@ -35,6 +35,23 @@
 typedef struct rt_table_ rt_table_t;
 typedef struct rt_table_entry_ rt_table_entry_t;
 
+struct rt_table_entry_{
+
+    char dest[16];
+    char mask;
+    char gw[16];
+    char oif[32];
+    time_t last_updated_time;
+    struct rt_table_entry_ *next;
+    struct rt_table_entry_ *prev;
+};
+
+struct rt_table_ {
+
+    char rt_table_name[32];
+    struct rt_table_entry_ *head;
+};
+
 rt_table_t *
 rt_create_new_rt_table(char *name);
 

@@ -31,9 +31,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "network_utils.h"
 #include "rt.h"
 
 rt_table_t *rt_table = NULL;
+
+static void
+udp_recv_fn1(char *msg_recvd, uint32_t msg_size, char *sender_ip, uint32_t port_no, uint32_t fd) {
+
+    printf ("route recvd on port no %d from IP %s\n", port_no, sender_ip);
+    rt_table_entry_t *rt_entry = (rt_table_entry_t *)msg_recvd;
+    printf ("   Route : %s %s %s\n", rt_entry->dest, rt_entry->gw, rt_entry->oif);
+    rt_insert_new_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
+}
 
 int
 main(int argc, char **argv){
@@ -50,17 +60,28 @@ main(int argc, char **argv){
         printf("\t 2.  : Create New RT Entry\n");
         printf("\t 3.  : Update Existing RT Entry\n");
         printf("\t 4.  : Delete RT entry\n");
-        printf("\t 5.  : exit\n");
+        printf("\t 5.  : Start Pkt Listener thread\n");
+        printf("\t 6.  : exit\n");
 
         int choice;
         printf("Enter Choice : ");
         scanf("%d", &choice);
 
-
         switch(choice){
             case 1:
+                rt_display_rt_table(rt_table);
+                printf("\n\n");
                 break;
             case 5:
+                {
+                    int portno;
+                    printf ("Listening port no ? ");
+                    scanf("%d", &portno);
+                    udp_server_create_and_start(
+                        "127.0.0.1", portno,  udp_recv_fn1);
+                }
+                break;
+            case 6:
                 exit(0);
             default:
                 break;

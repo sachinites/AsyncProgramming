@@ -28,30 +28,13 @@
  * =====================================================================================
  */
 
-#include "rt.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include "utils.h"
 #include <string.h>
-
-struct rt_table_entry_{
-
-    char dest[16];
-    char mask;
-    char gw[16];
-    char oif[32];
-    time_t last_updated_time;
-    struct rt_table_entry_ *next;
-    struct rt_table_entry_ *prev;
-};
-
-struct rt_table_ {
-
-    char rt_table_name[32];
-    struct rt_table_entry_ *head;
-};
-
+#include "utils.h"
+#include "rt.h"
 
 rt_table_t *
 rt_create_new_rt_table(char *name){
@@ -181,7 +164,7 @@ rt_display_rt_table(rt_table_t *rt){
         uptime_in_seconds = (unsigned int)difftime(
             curr_time, rt_table_entry->last_updated_time);
 
-        printf("%d. %-18s %-4d %-18s %s\n", i,
+        printf("%d. %-18s %-4d %-18s %-18s ", i,
             rt_table_entry->dest,
             rt_table_entry->mask,
             rt_table_entry->gw,
