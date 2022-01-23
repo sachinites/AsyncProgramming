@@ -37,27 +37,33 @@
 
 rt_table_t *rt_table = NULL;
 
+static int
+stp_update_routing_table(rt_table_t *rt_table, uint32_t cmd_code, rt_table_entry_t *rt_entry) {
+
+    int rc;
+    printf ("   Code = %u Route update recvd  : %s\n", cmd_code, rt_entry->dest);
+    switch(cmd_code){
+        case  ROUTE_CREATE:
+            rc = rt_insert_new_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
+            break;
+        case ROUTE_UPDATE:
+            rc = rt_update_rt_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
+            break;
+        case ROUTE_DELETE:
+            rc = rt_delete_rt_entry(rt_table, rt_entry->dest, 32);
+            break;
+        default : ;
+    }
+    return rc;
+}
+
 static void
 pkt_process_fn(char *msg_recvd, uint32_t msg_size, char *sender_ip, uint32_t port_no, uint32_t fd) {
 
     printf ("route recvd on port no %d from IP %s\n", port_no, sender_ip);
-
     uint32_t *cmd_code = (uint32_t *)msg_recvd;
-
     rt_table_entry_t *rt_entry = (rt_table_entry_t *)(cmd_code + 1);
-
-    printf ("   Code = %u Route update recvd  : %s\n", *cmd_code, rt_entry->dest);
-    switch(*cmd_code){
-        case  ROUTE_CREATE:
-            rt_insert_new_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
-            break;
-        case ROUTE_UPDATE:
-            rt_update_rt_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
-            break;
-        case ROUTE_DELETE:
-            rt_delete_rt_entry(rt_table, rt_entry->dest, 32);
-            break;
-    }
+    stp_update_routing_table(rt_table, *cmd_code, rt_entry);
 }
 
 int
@@ -70,6 +76,7 @@ main(int argc, char **argv){
     }
 
     for(;;){
+
         printf("Main Menu\n");
         printf("\t 1.  : Display Routing Table\n");
         printf("\t 2.  : Create New RT Entry\n");
@@ -96,7 +103,7 @@ main(int argc, char **argv){
                     scanf ("%s", rt_entry.gw);
                     printf ("Enter OIF name : ");
                     scanf ("%s", rt_entry.oif);
-                    rt_insert_new_entry(rt_table, rt_entry.dest, 32, rt_entry.gw, rt_entry.oif);
+                    stp_update_routing_table(rt_table, ROUTE_CREATE , &rt_entry);
                 }
             break;
             case 3:
@@ -107,7 +114,7 @@ main(int argc, char **argv){
                  rt_table_entry_t rt_entry;
                  printf ("Enter Dest Address : ");
                  scanf ("%s", rt_entry.dest);
-                 if ( rt_delete_rt_entry(rt_table, rt_entry.dest, 32)) {
+                 if ( stp_update_routing_table(rt_table, ROUTE_DELETE , &rt_entry) ) {
                      printf ("No Such entry\n");
                  }
             }
