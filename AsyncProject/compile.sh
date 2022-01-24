@@ -1,5 +1,5 @@
-rm *o
-rm *exe
+rm -f *o
+rm -f *exe
 gcc -g -c network_utils.c -o network_utils.o
 gcc -g -c stp.c -o stp.o
 gcc -g -c utils.c -o utils.o
