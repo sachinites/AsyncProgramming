@@ -66,6 +66,57 @@ pkt_process_fn(char *msg_recvd, uint32_t msg_size, char *sender_ip, uint32_t por
     stp_update_routing_table(rt_table, *cmd_code, rt_entry);
 }
 
+static void
+cli_handler(int choice)
+{
+    switch (choice)
+    {
+    case 1:
+        rt_display_rt_table(rt_table);
+        printf("\n\n");
+        break;
+    case 2:
+    {
+        rt_table_entry_t rt_entry;
+        printf("Enter Dest Address : ");
+        scanf("%s", rt_entry.dest);
+        printf("Enter Gateway  Address : ");
+        scanf("%s", rt_entry.gw);
+        printf("Enter OIF name : ");
+        scanf("%s", rt_entry.oif);
+        stp_update_routing_table(rt_table, ROUTE_CREATE, &rt_entry);
+    }
+    break;
+    case 3:
+        // do self
+        break;
+    case 4:
+    {
+        rt_table_entry_t rt_entry;
+        printf("Enter Dest Address : ");
+        scanf("%s", rt_entry.dest);
+        if (stp_update_routing_table(rt_table, ROUTE_DELETE, &rt_entry))
+        {
+            printf("No Such entry\n");
+        }
+    }
+    break;
+    case 5:
+    {
+        int portno;
+        printf("Listening port no ? ");
+        scanf("%d", &portno);
+        udp_server_create_and_start(
+            "127.0.0.1", portno, pkt_process_fn);
+    }
+    break;
+    case 6:
+        exit(0);
+    default:
+        break;
+    }
+}
+
 int
 main(int argc, char **argv){
 
@@ -89,50 +140,7 @@ main(int argc, char **argv){
         printf("Enter Choice : ");
         scanf("%d", &choice);
 
-        switch(choice){
-            case 1:
-                rt_display_rt_table(rt_table);
-                printf("\n\n");
-                break;
-            case 2:
-                {
-                    rt_table_entry_t rt_entry;
-                    printf ("Enter Dest Address : ");
-                    scanf ("%s", rt_entry.dest);
-                    printf ("Enter Gateway  Address : ");
-                    scanf ("%s", rt_entry.gw);
-                    printf ("Enter OIF name : ");
-                    scanf ("%s", rt_entry.oif);
-                    stp_update_routing_table(rt_table, ROUTE_CREATE , &rt_entry);
-                }
-            break;
-            case 3:
-                // do self
-                break;
-            case 4:
-            {
-                 rt_table_entry_t rt_entry;
-                 printf ("Enter Dest Address : ");
-                 scanf ("%s", rt_entry.dest);
-                 if ( stp_update_routing_table(rt_table, ROUTE_DELETE , &rt_entry) ) {
-                     printf ("No Such entry\n");
-                 }
-            }
-            break;
-            case 5:
-                {
-                    int portno;
-                    printf ("Listening port no ? ");
-                    scanf("%d", &portno);
-                    udp_server_create_and_start(
-                        "127.0.0.1", portno,  pkt_process_fn);
-                }
-                break;
-            case 6:
-                exit(0);
-            default:
-                break;
-        }
+        cli_handler(choice);
     }
     return 0;
 }
