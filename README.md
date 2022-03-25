@@ -1,6 +1,8 @@
 # AsyncProgramming
 Lets Learn Asynchronous Programming
 
+A mini-Library which provides an Event Loop functionality. Using EventLoop, A single threaded Concurrency can be reaslized, or multi-threaded applications can be reduced to logically single threaded. EventLoop allows to schedule the task to be performed asynchronously.
+
 Resources :
 https://stackoverflow.com/questions/748175/asynchronous-vs-synchronous-execution-what-does-it-really-mean
 
