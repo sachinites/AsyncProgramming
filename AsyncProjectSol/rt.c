@@ -34,8 +34,10 @@
 #include <time.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include "utils.h"
 #include "rt.h"
+#include "../timerlib.h"
 
 rt_table_t *
 rt_create_new_rt_table(char *name){
@@ -45,11 +47,22 @@ rt_create_new_rt_table(char *name){
     return rtable;
 }
 
+static void 
+rt_entry_exp_timer_cbk (Timer_t *timer, void *arg) {
+
+    rt_table_t *rt_table;
+    rt_table_entry_t *rt_table_entry = (rt_table_entry_t *)arg;
+
+    rt_table = rt_table_entry->rt_table;
+    rt_delete_rt_entry (rt_table, rt_table_entry->dest, rt_table_entry->mask);
+}
+
 
 int /*0 on success, -1 on failure*/
 rt_insert_new_entry(rt_table_t *rt,
         char *dest, char mask,
-        char *gw, char *oif){
+        char *gw, char *oif,
+        int exp_timer_in_millisec){
 
     rt_table_entry_t *rt_table_entry = rt_look_up_rt_table_entry(
         rt, dest, mask);
@@ -61,6 +74,8 @@ rt_insert_new_entry(rt_table_t *rt,
 
     rt_table_entry = 
             calloc(1, sizeof(rt_table_entry_t));
+    
+    rt_table_entry->rt_table = rt;
 
    strncpy(rt_table_entry->dest, dest, 16);
    rt_table_entry->mask = mask;
@@ -69,6 +84,15 @@ rt_insert_new_entry(rt_table_t *rt,
    rt_table_entry->next = 0;
    rt_table_entry->prev = 0;
    time(&rt_table_entry->last_updated_time);
+
+   if (exp_timer_in_millisec) {
+        rt_table_entry->exp_timer = setup_timer(
+                                rt_entry_exp_timer_cbk, 
+                                exp_timer_in_millisec, 0, 0, 
+                                (void *)rt_table_entry , false);
+    
+        start_timer (rt_table_entry->exp_timer);
+   }
 
    /* Now insert the new rt_table_entry at the beginnig of the
     * list*/
@@ -95,6 +119,11 @@ rt_delete_rt_entry(rt_table_t *rt,
 
     if(!rt_table_entry)
         return -1;
+    
+    if (rt_table_entry->exp_timer) {
+        delete_timer (rt_table_entry->exp_timer);
+        rt_table_entry->exp_timer = NULL;
+    }
 
     /*Now delete it*/
     if(rt->head == rt_table_entry){
@@ -150,6 +179,12 @@ rt_update_rt_entry(rt_table_t *rt,
        rt_table_entry->mask == mask &&
        strncmp(rt_table_entry->gw, new_gw, 16) == 0 &&
        strncmp(rt_table_entry->oif, new_oif, 32) == 0){    
+
+        /* Refresh the timer */ 
+        if (rt_table_entry->exp_timer) {
+            restart_timer (rt_table_entry->exp_timer);
+        }
+
        return -1;
     }
 
@@ -158,6 +193,13 @@ rt_update_rt_entry(rt_table_t *rt,
    strncpy(rt_table_entry->gw, new_gw, 16);
    strncpy(rt_table_entry->oif, new_oif, 32);
    time(&rt_table_entry->last_updated_time);
+
+   /* Refresh the timer */
+   if (rt_table_entry->exp_timer) {
+
+       restart_timer(rt_table_entry->exp_timer);
+   }
+
    return 0;
 }
 
@@ -177,12 +219,16 @@ rt_display_rt_table(rt_table_t *rt){
         uptime_in_seconds = (unsigned int)difftime(
             curr_time, rt_table_entry->last_updated_time);
 
-        printf("%d. %-18s %-4d %-18s %-18s ", i,
+        printf("%d. %-18s %-4d %-18s %-18s", i,
             rt_table_entry->dest,
             rt_table_entry->mask,
             rt_table_entry->gw,
             rt_table_entry->oif);
-        printf("Last updated : %s\n", hrs_min_sec_format(uptime_in_seconds));
+        
+        printf("Last updated : %s  ", hrs_min_sec_format(uptime_in_seconds)),
+        printf ("Exp time : %lu\n",
+        rt_table_entry->exp_timer ? \
+            timer_get_time_remaining_in_mill_sec (rt_table_entry->exp_timer) : 0);
         i++;
     }
 }

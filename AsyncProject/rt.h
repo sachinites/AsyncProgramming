@@ -48,6 +48,7 @@ struct rt_table_entry_{
     time_t last_updated_time;
     struct rt_table_entry_ *next;
     struct rt_table_entry_ *prev;
+     rt_table_t *rt_table; /* back ptr to owning rt table*/
 };
 
 struct rt_table_ {

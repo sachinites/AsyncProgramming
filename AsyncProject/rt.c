@@ -62,6 +62,9 @@ rt_insert_new_entry(rt_table_t *rt,
     rt_table_entry = 
             calloc(1, sizeof(rt_table_entry_t));
 
+   rt_table_entry->rt_table = rt;
+
+
    strncpy(rt_table_entry->dest, dest, 16);
    rt_table_entry->mask = mask;
    strncpy(rt_table_entry->gw, gw, 16);

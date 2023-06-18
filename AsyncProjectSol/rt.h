@@ -34,6 +34,10 @@
 /*Opaque Data structures*/
 typedef struct rt_table_ rt_table_t;
 typedef struct rt_table_entry_ rt_table_entry_t;
+typedef struct Timer_ Timer_t;
+
+#define RT_ENTRY_EXP_TIMER 30  // 30 sec
+
 
 #define ROUTE_CREATE    1
 #define ROUTE_UPDATE    2
@@ -46,8 +50,11 @@ struct rt_table_entry_{
     char gw[16];
     char oif[32];
     time_t last_updated_time;
+    Timer_t *exp_timer;
     struct rt_table_entry_ *next;
     struct rt_table_entry_ *prev;
+    int exp_timer_msec;
+    rt_table_t *rt_table; /* back ptr to owning rt table*/
 };
 
 struct rt_table_ {
@@ -63,7 +70,8 @@ rt_create_new_rt_table(char *name);
 int /*0 on success, -1 on failure*/
 rt_insert_new_entry(rt_table_t *rt, 
                     char *dest, char mask,
-                    char *gw, char *oif);
+                    char *gw, char *oif, 
+                    int exp_timer_in_millisec);
 
 int /*0 on success, -1 on failure*/
 rt_delete_rt_entry(rt_table_t *rt,

@@ -48,7 +48,7 @@ stp_update_routing_table(rt_table_t *rt_table, uint32_t cmd_code, rt_table_entry
     printf ("   Code = %u Route update recvd  : %s\n", cmd_code, rt_entry->dest);
     switch(cmd_code){
         case  ROUTE_CREATE:
-            rc = rt_insert_new_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
+            rc = rt_insert_new_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif, rt_entry->exp_timer_msec);
             break;
         case ROUTE_UPDATE:
             rc = rt_update_rt_entry(rt_table, rt_entry->dest, 32, rt_entry->gw, rt_entry->oif);
@@ -67,6 +67,7 @@ pkt_process_fn(char *msg_recvd, uint32_t msg_size, char *sender_ip, uint32_t por
     printf ("route recvd on port no %d from IP %s\n", port_no, sender_ip);
     uint32_t *cmd_code = (uint32_t *)msg_recvd;
     rt_table_entry_t *rt_entry = (rt_table_entry_t *)(cmd_code + 1);
+    rt_entry->exp_timer_msec = RT_ENTRY_EXP_TIMER * 1000;
     //stp_update_routing_table(rt_table, *cmd_code, rt_entry);
     el_stp_update_routing_table(rt_table, *cmd_code, rt_entry);
 }
@@ -89,6 +90,7 @@ cli_handler(int choice)
         scanf("%s", rt_entry.gw);
         printf("Enter OIF name : ");
         scanf("%s", rt_entry.oif);
+        rt_entry.exp_timer_msec = 0; /* rt entries created by CLI must never expire*/
         //stp_update_routing_table(rt_table, ROUTE_CREATE, &rt_entry);
         el_stp_update_routing_table(rt_table, ROUTE_CREATE, &rt_entry);
     }
