@@ -57,6 +57,7 @@ main(int argc, char **argv){
 			break;
 		case 5:
 			delete_timer(timer);
+			timer = NULL;
 			break;
 		case 6:
 			cancel_timer(timer);
