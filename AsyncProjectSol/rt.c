@@ -38,6 +38,7 @@
 #include "utils.h"
 #include "rt.h"
 #include "../timerlib.h"
+#include "stp_el.h"
 
 rt_table_t *
 rt_create_new_rt_table(char *name){
@@ -54,7 +55,9 @@ rt_entry_exp_timer_cbk (Timer_t *timer, void *arg) {
     rt_table_entry_t *rt_table_entry = (rt_table_entry_t *)arg;
 
     rt_table = rt_table_entry->rt_table;
-    rt_delete_rt_entry (rt_table, rt_table_entry->dest, rt_table_entry->mask);
+
+    /* Handover the deletion of routing table entry to event loop thread */
+    el_stp_update_routing_table (rt_table, ROUTE_DELETE, rt_table_entry);
 }
 
 
