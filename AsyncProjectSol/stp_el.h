@@ -20,4 +20,7 @@ stp_init_el(event_loop_t *el);
 task_t *
 el_stp_update_routing_table(rt_table_t *rt, int cmd_code, rt_table_entry_t *rt_entry);
 
+void
+rt_display_rt_table_preemption_conext_save (rt_table_t *rt);
+
 #endif

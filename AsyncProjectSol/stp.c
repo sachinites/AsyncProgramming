@@ -78,7 +78,8 @@ cli_handler(int choice)
     switch (choice)
     {
     case 1:
-        rt_display_rt_table(rt_table);
+        //rt_display_rt_table(rt_table);
+        rt_display_rt_table_preemption_conext_save (rt_table);
         printf("\n\n");
         break;
     case 2:
