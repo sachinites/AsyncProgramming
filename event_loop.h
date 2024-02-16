@@ -22,8 +22,14 @@
 typedef struct task_ task_t;
 typedef struct event_loop_ event_loop_t;
 
+typedef enum EL_RES_ {
 
-typedef void (*event_cbk)(void *);
+    EL_CONTINUE,
+    EL_FINISH
+
+} EL_RES_T;
+
+typedef EL_RES_T (*event_cbk)(void *);
 
 struct task_ {
 

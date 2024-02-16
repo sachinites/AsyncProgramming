@@ -8,32 +8,35 @@ event_loop_t el;
 static int upload = 0;
 static int download = 0;
 
-static void
+static EL_RES_T
 upload_fn(void *arg) {
 
     while(upload < 100) {
-    upload += 2;
-    printf ("upload percent-age = %d\n", upload);
-    if (upload % 10 == 0 && upload != 100) {
-        task_create_new_job(&el, upload_fn, NULL);
-        return;
+        
+        upload += 2;
+        printf ("upload percent-age = %d\n", upload);
+        if (upload % 10 == 0 && upload != 100) {
+            //task_create_new_job(&el, upload_fn, NULL);
+            return EL_CONTINUE;
+        }
     }
-    }
+    return EL_FINISH;
 }
 
-static void
+static EL_RES_T
 download_fn(void *arg) {
 
     while(download < 100) {
-    download += 2;
-    printf ("download percent-age = %d\n", download);
-    if (download % 10 == 0 && download != 100) {
-        task_create_new_job(&el, download_fn, NULL);
-        return;
-    }
-    }
-}
 
+        download += 2;
+        printf ("download percent-age = %d\n", download);
+        if (download % 10 == 0 && download != 100) {
+            //task_create_new_job(&el, download_fn, NULL);
+            return EL_CONTINUE;
+        }
+    }
+    return EL_FINISH;
+}
 
 int
 main(int argc, char **argv) {

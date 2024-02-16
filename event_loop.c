@@ -89,10 +89,28 @@ event_loop_init(event_loop_t *el){
     el->current_task = NULL;
 }
 
+static void
+event_loop_schedule_task(event_loop_t *el, task_t *task) {
+
+    pthread_mutex_lock(&el->ev_loop_mutex);
+
+    event_loop_add_task_in_task_array(el, task);
+
+    if (el->ev_loop_state == EV_LOOP_BUSY) {
+        pthread_mutex_unlock(&el->ev_loop_mutex);
+        return;
+    }
+
+    pthread_cond_signal(&el->ev_loop_cv);
+    pthread_mutex_unlock(&el->ev_loop_mutex);
+}
+
 static void *
 event_loop_thread(void *arg) {
 
     task_t *task;
+    EL_RES_T res;
+
     event_loop_t *el = (event_loop_t *)arg;
 
     while(1) {
@@ -123,28 +141,18 @@ event_loop_thread(void *arg) {
 
         /* Fire the task now */
         el->current_task = task;
-        task->cbk(task->arg);
+        res = task->cbk(task->arg);
         el->current_task = NULL;
-        /* Free the task, we are done with this task*/
-        free(task);
+
+        if (res == EL_CONTINUE) {
+            /* Schedule the task again*/
+            event_loop_schedule_task(el, task);
+        }
+        else {
+            /* Free the task, we are done with this task*/
+            free(task);
+        }
     }
-}
-
-
-static void
-event_loop_schedule_task(event_loop_t *el, task_t *task) {
-
-    pthread_mutex_lock(&el->ev_loop_mutex);
-
-    event_loop_add_task_in_task_array(el, task);
-
-    if (el->ev_loop_state == EV_LOOP_BUSY) {
-        pthread_mutex_unlock(&el->ev_loop_mutex);
-        return;
-    }
-
-    pthread_cond_signal(&el->ev_loop_cv);
-    pthread_mutex_unlock(&el->ev_loop_mutex);
 }
 
 
