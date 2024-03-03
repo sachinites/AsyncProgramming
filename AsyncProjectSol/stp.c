@@ -123,6 +123,14 @@ cli_handler(int choice)
     }
     break;
     case 6:
+    {
+        rt_table_entry_t rt_entry_tmplate;
+        printf("Enter Dest Address : ");
+        scanf("%s", rt_entry_tmplate.dest);
+        el_stp_serialize_and_send_rt_entry (rt_table, &rt_entry_tmplate);
+    }
+    break;
+    case 7:
         exit(0);
     default:
         break;
@@ -148,7 +156,8 @@ main(int argc, char **argv){
         printf("\t 3.  : Update Existing RT Entry\n");
         printf("\t 4.  : Delete RT entry\n");
         printf("\t 5.  : Start Pkt Listener thread\n");
-        printf("\t 6.  : exit\n");
+        printf("\t 6.  : Serialize and send RT entry\n");
+        printf("\t 7.  : exit\n");
 
         int choice;
         printf("Enter Choice : ");

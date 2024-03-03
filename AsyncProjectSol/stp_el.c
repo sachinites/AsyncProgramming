@@ -5,6 +5,7 @@
 #include <time.h>
 #include <stdio.h>
 #include "utils.h"
+#include "network_utils.h"
 #include "../timerlib.h"
 #include "stp_el.h"
 
@@ -125,4 +126,61 @@ rt_display_rt_table_preemption_conext_save (rt_table_t *rt){
      task_create_new_job (&el, 
                                          rt_display_rt_table_preemption_conext_save_cbk, 
                                          (void *) cntxt);
+}
+
+
+static EL_RES_T
+rt_entry_serlialize_and_send_task_cbk (void *arg) {
+
+    rt_table_entry_t *rt_entry = (rt_table_entry_t *)arg;
+
+    /* look up RT entry in RT table*/
+    rt_table_entry_t *actual_rt_entry = rt_look_up_rt_table_entry (
+                                                            rt_entry->rt_table,
+                                                            rt_entry->dest,
+                                                            rt_entry->mask);
+
+    if (!actual_rt_entry) {
+
+        printf ("Serialize Task : RT Entry do not exist\n");
+        free(rt_entry);
+        return EL_FINISH;
+    }
+
+    int udp_sockfd = socket (AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    
+    if (udp_sockfd < 0) {
+        printf ("Error : Failed to create UDP socket\n");
+        free(rt_entry);
+        return EL_FINISH;
+    }
+
+    int msg_size = sizeof(uint32_t) + sizeof(rt_table_entry_t);
+    uint32_t *msg_to_send = (uint32_t *)calloc (1 , msg_size);
+    *msg_to_send = ROUTE_CREATE;
+    memcpy( (char *)(msg_to_send + 1) , (char *)actual_rt_entry, sizeof(rt_table_entry_t));
+
+    send_udp_msg("127.0.0.1",
+			 50000,
+			 (char *)msg_to_send, msg_size,
+			 udp_sockfd);
+
+    close (udp_sockfd);
+    free(msg_to_send);
+    free(rt_entry);
+    return EL_FINISH;
+}
+
+void
+el_stp_serialize_and_send_rt_entry (rt_table_t *rt_table, rt_table_entry_t *rt_entry_tmplate) {
+
+    /* This new rt_entry serves the purpose of context-save structure for this task*/
+    rt_table_entry_t *rt_entry = (rt_table_entry_t *)calloc (1, sizeof (rt_table_entry_t));
+    strncpy (rt_entry->dest, rt_entry_tmplate->dest, 16);
+    rt_entry->mask = 32;
+    rt_entry->rt_table = rt_table;
+
+    task_create_new_job (&el, 
+                                        rt_entry_serlialize_and_send_task_cbk,
+                                        (void *)rt_entry);
 }

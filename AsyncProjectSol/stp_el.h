@@ -23,4 +23,7 @@ el_stp_update_routing_table(rt_table_t *rt, int cmd_code, rt_table_entry_t *rt_e
 void
 rt_display_rt_table_preemption_conext_save (rt_table_t *rt);
 
+void
+el_stp_serialize_and_send_rt_entry (rt_table_t *rt, rt_table_entry_t *rt_entry);
+
 #endif
