@@ -54,7 +54,7 @@ el_stp_update_routing_table(rt_table_t *rt_table, int cmd_code, rt_table_entry_t
 
     task_t *task = task_create_new_job (&el,
                                                                 el_stp_update_routing_table_cbk,
-                                                                (void *)el_rt_table_update_data);
+                                                                (void *)el_rt_table_update_data, TASK_PRIORITY_MEDIUM);
     return task;
 }
 
@@ -125,7 +125,7 @@ rt_display_rt_table_preemption_conext_save (rt_table_t *rt){
 
      task_create_new_job (&el, 
                                          rt_display_rt_table_preemption_conext_save_cbk, 
-                                         (void *) cntxt);
+                                         (void *) cntxt, TASK_PRIORITY_HIGH);
 }
 
 
@@ -182,5 +182,5 @@ el_stp_serialize_and_send_rt_entry (rt_table_t *rt_table, rt_table_entry_t *rt_e
 
     task_create_new_job (&el, 
                                         rt_entry_serlialize_and_send_task_cbk,
-                                        (void *)rt_entry);
+                                        (void *)rt_entry, TASK_PRIORITY_MEDIUM);
 }

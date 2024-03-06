@@ -11,16 +11,22 @@ bool static el_debug = true;
 static task_t *
 event_loop_get_next_task_to_run(event_loop_t *el){
 
-	task_t *task;
-	if (!el->task_array_head) return NULL;
-    task = el->task_array_head;
-	el->task_array_head = task->right;
-	if (el->task_array_head) {
-		el->task_array_head->left = NULL;
-	}
-	task->left = NULL;
-	task->right = NULL;
-	return task;
+    int i;
+	task_t *task = NULL;
+
+    for (i = 0; i < TASK_PRIORITY_MAX; i++) {
+        
+        if (!el->task_array_head[i]) continue;
+        task = el->task_array_head[i];
+        el->task_array_head[i] = task->right;
+        if (el->task_array_head[i]) {
+            el->task_array_head[i]->left = NULL;
+        }
+        task->left = NULL;
+        task->right = NULL;
+        return task;
+    }
+    return NULL;
 }
 
 static void
@@ -32,7 +38,7 @@ event_loop_add_task_in_task_array(
 	
 	prev_task = NULL;
 	
-	task = el->task_array_head;
+	task = el->task_array_head[new_task->priority];
 	while (task) {
 		prev_task = task;
 		task = task->right;
@@ -42,7 +48,7 @@ event_loop_add_task_in_task_array(
 		new_task->left = prev_task;
 	}
 	else {
-		el->task_array_head = new_task;
+		el->task_array_head[new_task->priority] = new_task;
 	}
 }
 
@@ -55,8 +61,8 @@ task_is_present_in_task_array(task_t *task) {
 static void
 event_loop_remove_task_from_task_array(event_loop_t *el, task_t *task) {
 
-    if (el->task_array_head == task) {
-        el->task_array_head = task->right;
+    if (el->task_array_head[task->priority] == task) {
+        el->task_array_head[task->priority] = task->right;
     }
 
 	if(!task->left){
@@ -82,7 +88,10 @@ event_loop_remove_task_from_task_array(event_loop_t *el, task_t *task) {
 void
 event_loop_init(event_loop_t *el){
 
-    el->task_array_head = NULL;
+    int i;
+    for (i = 0; i < TASK_PRIORITY_MAX; i++) {
+        el->task_array_head[i] = NULL;
+    }
     pthread_mutex_init ( &el->ev_loop_mutex, NULL);
     el->ev_loop_state = EV_LOOP_IDLE;
     pthread_cond_init(&el->ev_loop_cv, NULL);
@@ -157,14 +166,14 @@ event_loop_thread(void *arg) {
 
 
 task_t *
-task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg) {
+task_create_new_job(event_loop_t *el, event_cbk cbk, void *arg, TASK_PRIORITY_T priority) {
 
     task_t *task = (task_t *)calloc(1, sizeof(task_t));
     task->arg = arg;
     task->cbk = cbk;
     task->left = NULL;
     task->right = NULL;
-
+    task->priority = priority;
     event_loop_schedule_task(el, task);
     return task;
 }
