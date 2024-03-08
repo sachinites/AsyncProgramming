@@ -54,7 +54,8 @@ el_stp_update_routing_table(rt_table_t *rt_table, int cmd_code, rt_table_entry_t
 
     task_t *task = task_create_new_job (&el,
                                                                 el_stp_update_routing_table_cbk,
-                                                                (void *)el_rt_table_update_data, TASK_PRIORITY_MEDIUM);
+                                                                (void *)el_rt_table_update_data, 
+                                                                cmd_code == ROUTE_DELETE ? TASK_PRIORITY_LOW : TASK_PRIORITY_MEDIUM);
     return task;
 }
 
@@ -183,4 +184,72 @@ el_stp_serialize_and_send_rt_entry (rt_table_t *rt_table, rt_table_entry_t *rt_e
     task_create_new_job (&el, 
                                         rt_entry_serlialize_and_send_task_cbk,
                                         (void *)rt_entry, TASK_PRIORITY_MEDIUM);
+}
+
+
+
+typedef struct rt_table_delete_context_ {
+
+    rt_table_entry_t *rt_entry;
+
+} rt_table_delete_context_t;
+
+
+EL_RES_T
+rt_table_delete_cbk (void *arg) {
+
+    int i = 0;
+
+    rt_table_delete_context_t *cntxt = (rt_table_delete_context_t *)arg;
+
+    rt_table_entry_t *rt_entry = cntxt->rt_entry;
+    rt_table_entry_t *rt_entry_next;
+
+    printf ("Resuming rt_table deletion Task\n");
+
+    do {
+        
+        rt_entry_next = rt_entry->next;
+
+        if (rt_entry->exp_timer) {
+            delete_timer (rt_entry->exp_timer);
+            rt_entry->exp_timer = NULL;
+        }
+
+        printf ("Deleting rt_entry = %s/%d\n", rt_entry->dest, rt_entry->mask);
+        free(rt_entry);
+        i++;
+
+        if (i % 10 == 0 && rt_entry_next) {
+            cntxt->rt_entry = rt_entry_next;
+            printf ("Preempting rt_table deletion Task\n");
+            return EL_CONTINUE;
+        }
+
+        rt_entry = rt_entry_next;
+
+    } while (rt_entry);
+
+    free(cntxt);
+    printf ("rt_table deletion Task Finished\n");
+    return EL_FINISH;
+}
+
+void
+el_stp_delete_rt_table(rt_table_t *rt_table) {
+
+    /* This is the case when we need to delete a container data structures.
+    Container data structures must be isloted from remaining application data structures first*/
+    if (!rt_table) return;
+    if (!rt_table->head) return;
+
+    /* Isolate RT Table*/
+    rt_table_entry_t *rt_entry = rt_table->head;
+    rt_table->head = NULL;
+
+    rt_table_delete_context_t *cntxt = (rt_table_delete_context_t *) calloc (1, sizeof (rt_table_delete_context_t));
+    cntxt->rt_entry = rt_entry;
+
+    task_create_new_job (&el, rt_table_delete_cbk,
+                                                (void *) cntxt, TASK_PRIORITY_LOW);
 }

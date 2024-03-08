@@ -131,6 +131,9 @@ cli_handler(int choice)
     }
     break;
     case 7:
+        el_stp_delete_rt_table(rt_table);
+        break;
+    case 8:
         exit(0);
     default:
         break;
@@ -157,7 +160,8 @@ main(int argc, char **argv){
         printf("\t 4.  : Delete RT entry\n");
         printf("\t 5.  : Start Pkt Listener thread\n");
         printf("\t 6.  : Serialize and send RT entry\n");
-        printf("\t 7.  : exit\n");
+        printf("\t 7.  : Delete RT Table\n");
+        printf("\t 8.  : exit\n");
 
         int choice;
         printf("Enter Choice : ");
